@@ -13,8 +13,10 @@ import (
 	"mangahub/internal/auth"
 	"mangahub/internal/library"
 	"mangahub/internal/manga"
+	"mangahub/internal/tcpsync"
 	"mangahub/internal/user"
 	"mangahub/pkg/database"
+	"mangahub/pkg/models"
 )
 
 var jwtSecret = []byte("dev-secret-change-me")
@@ -56,6 +58,16 @@ func main() {
 
 	r := gin.Default()
 
+	progressCh := make(chan models.ProgressUpdate, 100)
+	tcpServer := tcpsync.New(":9090", progressCh)
+	go func() {
+		if err := tcpServer.Start(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	// cuối cùng mới start HTTP
+	log.Fatal(r.Run(":8080"))
 	// (Optional) nếu bạn muốn bỏ warning proxy của Gin:
 	// r.SetTrustedProxies(nil)
 
@@ -73,7 +85,7 @@ func main() {
 	authed := r.Group("/")
 	authed.Use(auth.RequireJWT(jwtSecret))
 	authed.POST("/library", func(c *gin.Context) { handleAddLibrary(c, db) })
-	authed.PATCH("/progress", func(c *gin.Context) { handleUpdateProgress(c, db) })
+	authed.PATCH("/progress", func(c *gin.Context) { handleUpdateProgress(c, db, progressCh) })
 
 	log.Println("HTTP API listening on :8080")
 	log.Fatal(r.Run(":8080"))
@@ -186,7 +198,7 @@ func handleAddLibrary(c *gin.Context, db *sql.DB) {
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
-func handleUpdateProgress(c *gin.Context, db *sql.DB) {
+func handleUpdateProgress(c *gin.Context, db *sql.DB, progressCh chan<- models.ProgressUpdate) {
 	var req struct {
 		MangaID        string `json:"manga_id"`
 		CurrentChapter int    `json:"current_chapter"`
@@ -210,11 +222,18 @@ func handleUpdateProgress(c *gin.Context, db *sql.DB) {
 		return
 	}
 
-	if err := library.UpsertProgress(db, library.Progress{
-		UserID: userID, MangaID: req.MangaID, CurrentChapter: req.CurrentChapter, Status: req.Status,
-	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
-		return
+	evt := models.ProgressUpdate{
+		UserID:    userID,
+		MangaID:   req.MangaID,
+		Chapter:   req.CurrentChapter,
+		Timestamp: time.Now().Unix(),
+	}
+
+	// tránh block nếu channel đầy
+	select {
+	case progressCh <- evt:
+	default:
+		log.Println("warn: progress channel full, drop event")
 	}
 
 	// Day 3: thay log này bằng push event -> TCP broadcast
