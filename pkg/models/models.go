@@ -28,3 +28,11 @@ type ProgressUpdate struct {
 	Chapter   int    `json:"chapter"`
 	Timestamp int64  `json:"timestamp"`
 }
+
+// chat format
+type ChatMessage struct {
+	UserID    string `json:"user_id"`
+	Username  string `json:"username"`
+	Message   string `json:"message"`
+	Timestamp int64  `json:"timestamp"`
+}

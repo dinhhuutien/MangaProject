@@ -3,20 +3,26 @@ package main
 import (
 	"database/sql"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"mangahub/internal/auth"
+	grpcserver "mangahub/internal/grpc"
 	"mangahub/internal/library"
 	"mangahub/internal/manga"
 	"mangahub/internal/tcpsync"
 	"mangahub/internal/user"
+	"mangahub/internal/websocket"
 	"mangahub/pkg/database"
 	"mangahub/pkg/models"
+	"mangahub/proto"
 )
 
 var jwtSecret = []byte("dev-secret-change-me")
@@ -66,11 +72,28 @@ func main() {
 		}
 	}()
 
-	// cuối cùng mới start HTTP
-	log.Fatal(r.Run(":8080"))
-	// (Optional) nếu bạn muốn bỏ warning proxy của Gin:
-	// r.SetTrustedProxies(nil)
+	// gRPC server
+	grpcServer := grpc.NewServer()
+	grpcService := grpcserver.NewServer(db)
+	proto.RegisterMangaServiceServer(grpcServer, grpcService)
+	reflection.Register(grpcServer)
+	go func() {
+		lis, err := net.Listen("tcp", ":50051")
+		if err != nil {
+			log.Fatal("Failed to listen for gRPC:", err)
+		}
+		log.Println("gRPC server listening on :50051")
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatal("Failed to serve gRPC:", err)
+		}
+	}()
 
+	// Chat hub
+	chatHub := websocket.NewHub()
+	go chatHub.Run()
+	log.Println("Chat hub started")
+
+	//ROUTES
 	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
 
 	// AUTH
@@ -80,6 +103,9 @@ func main() {
 	// PUBLIC MANGA
 	r.GET("/manga", func(c *gin.Context) { handleSearchManga(c, db) })
 	r.GET("/manga/:id", func(c *gin.Context) { handleMangaDetail(c, db) })
+
+	// WEBSOCKET CHAT
+	r.GET("/ws", websocket.HandleWebSocket(chatHub))
 
 	// PROTECTED
 	authed := r.Group("/")
