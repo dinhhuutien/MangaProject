@@ -18,6 +18,7 @@ import (
 	"mangahub/internal/library"
 	"mangahub/internal/manga"
 	"mangahub/internal/tcpsync"
+	"mangahub/internal/udpnotify"
 	"mangahub/internal/user"
 	"mangahub/internal/websocket"
 	"mangahub/pkg/database"
@@ -65,12 +66,23 @@ func main() {
 	r := gin.Default()
 
 	progressCh := make(chan models.ProgressUpdate, 100)
+
+	// TCP server
 	tcpServer := tcpsync.New(":9090", progressCh)
 	go func() {
 		if err := tcpServer.Start(); err != nil {
 			log.Fatal(err)
 		}
 	}()
+
+	// UDP server
+	udpServer := udpnotify.New(":7070")
+	go func() {
+		if err := udpServer.Start(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	log.Println("UDP server listening on :7070")
 
 	// gRPC server
 	grpcServer := grpc.NewServer()
