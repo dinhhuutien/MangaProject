@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MangaHub – Use Case Demo UI</title>
+</head>
+<body>
+
+<h1>MangaHub – Full Use Case Demo UI</h1>
+
+<hr>
+
+<h2>UC-001: User Registration</h2>
+<p>Register new user (REST API)</p>
+<input id="regUser" placeholder="username">
+<input id="regPass" type="password" placeholder="password">
+<button onclick="register()">Register</button>
+
+<hr>
+
+<h2>UC-002: User Authentication</h2>
+<input id="loginUser" placeholder="username">
+<input id="loginPass" type="password" placeholder="password">
+<button onclick="login()">Login</button>
+<pre id="tokenBox"></pre>
+
+<hr>
+
+<h2>UC-003: Search / Browse Manga</h2>
+<button onclick="loadManga()">Load Manga</button>
+<ul id="mangaList"></ul>
+
+<hr>
+
+<h2>UC-004: View Manga Detail</h2>
+<p>Click manga ID from list to view detail (basic)</p>
+<pre id="mangaDetail"></pre>
+
+<hr>
+
+<h2>UC-005 & UC-006: Add to Library / Update Progress</h2>
+<input id="mangaId" placeholder="manga_id">
+<input id="chapter" type="number" placeholder="chapter">
+<button onclick="updateProgress()">Update Progress</button>
+
+<hr>
+
+<h2>UC-007 & UC-008: TCP Progress Sync</h2>
+<p>
+TCP sync is demonstrated via <b>tcp-monitor</b> client.<br>
+Updating progress above will broadcast events to TCP clients.
+</p>
+
+<hr>
+
+<h2>UC-009: UDP Notification Subscription</h2>
+<p>UDP clients subscribe via udp-monitor.</p>
+<button onclick="udpInfo()">Show UDP Info</button>
+<pre id="udpBox"></pre>
+
+<hr>
+
+<h2>UC-010: Send Chapter Release Notification</h2>
+<p>Admin-triggered notification (server-side)</p>
+<button onclick="alert('Trigger UDP notification via server/admin API')">
+Trigger Notification
+</button>
+
+<hr>
+
+<h2>UC-011 & UC-012: WebSocket Chat</h2>
+<button onclick="connectWS()">Connect WebSocket</button><br><br>
+<input id="wsMsg" placeholder="message">
+<button onclick="sendWS()">Send</button>
+<pre id="chatBox"></pre>
+
+<hr>
+
+<h2>UC-013: WebSocket Disconnect</h2>
+<p>Disconnect handled automatically when browser closes.</p>
+
+<hr>
+
+<h2>UC-014–016: gRPC Internal Services</h2>
+<p>
+gRPC services are internal and demonstrated via gRPC clients,
+not browser UI.
+</p>
+
+<hr>
+
+<h2>UC-025–031: Error Handling & Security</h2>
+<ul>
+  <li>JWT validation – middleware</li>
+  <li>Input validation – backend</li>
+  <li>Network recovery – service-level</li>
+</ul>
+
+<script>
+let TOKEN = ""
+let ws = null
+
+function register() {
+  fetch("/auth/register", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      username: regUser.value,
+      password: regPass.value
+    })
+  })
+}
+
+function login() {
+  fetch("/auth/login", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      username: loginUser.value,
+      password: loginPass.value
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    TOKEN = d.token
+    tokenBox.innerText = TOKEN
+  })
+}
+
+function loadManga() {
+  fetch("/manga")
+    .then(r => r.json())
+    .then(d => {
+      mangaList.innerHTML = ""
+      d.results.forEach(m => {
+        const li = document.createElement("li")
+        li.innerText = m.id + " - " + m.title
+        li.onclick = () => mangaDetail.innerText = JSON.stringify(m, null, 2)
+        mangaList.appendChild(li)
+      })
+    })
+}
+
+function updateProgress() {
+  fetch("/progress", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + TOKEN
+    },
+    body: JSON.stringify({
+      manga_id: mangaId.value,
+      current_chapter: parseInt(chapter.value),
+      status: "reading"
+    })
+  })
+}
+
+function udpInfo() {
+  udpBox.innerText =
+    "UDP notifications are demonstrated via udp-monitor client."
+}
+
+function connectWS() {
+  ws = new WebSocket("ws://" + location.host + "/ws")
+  ws.onmessage = e => chatBox.innerText += e.data + "\n"
+}
+
+function sendWS() {
+  ws.send(wsMsg.value)
+}
+</script>
+
+</body>
+</html>

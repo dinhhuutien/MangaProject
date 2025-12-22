@@ -64,6 +64,15 @@ func main() {
 	}
 
 	r := gin.Default()
+	//web
+
+	// Serve UI entry
+	r.GET("/ui", func(c *gin.Context) {
+		c.File("./web/index.html")
+	})
+
+	// Serve static files
+	r.Static("/ui", "./web")
 
 	progressCh := make(chan models.ProgressUpdate, 100)
 	tcpServer := tcpsync.New(":9090", progressCh)
