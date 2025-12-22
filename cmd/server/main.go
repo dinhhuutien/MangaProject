@@ -18,6 +18,7 @@ import (
 	"mangahub/internal/library"
 	"mangahub/internal/manga"
 	"mangahub/internal/tcpsync"
+	"mangahub/internal/udpnotify"
 	"mangahub/internal/user"
 	"mangahub/internal/websocket"
 	"mangahub/pkg/database"
@@ -71,6 +72,12 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
+	udpServer := udpnotify.New(":7070")
+	go func() {
+		if err := udpServer.Start(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	// gRPC server
 	grpcServer := grpc.NewServer()
@@ -112,6 +119,17 @@ func main() {
 	authed.Use(auth.RequireJWT(jwtSecret))
 	authed.POST("/library", func(c *gin.Context) { handleAddLibrary(c, db) })
 	authed.PATCH("/progress", func(c *gin.Context) { handleUpdateProgress(c, db, progressCh) })
+	authed.POST("/admin/notify", func(c *gin.Context) {
+		var req struct {
+			Message string `json:"message"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil || req.Message == "" {
+			c.JSON(400, gin.H{"error": "message required"})
+			return
+		}
+		udpServer.Broadcast(req.Message)
+		c.JSON(200, gin.H{"ok": true})
+	})
 
 	log.Println("HTTP API listening on :8080")
 	log.Fatal(r.Run(":8080"))
