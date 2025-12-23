@@ -22,9 +22,10 @@ var upgrader = websocket.Upgrader{
 }
 
 type client struct {
-	hub  *ChatHub
-	conn *websocket.Conn
-	send chan []byte
+	hub      *ChatHub
+	conn     *websocket.Conn
+	send     chan []byte
+	username string
 }
 
 func HandleWebSocket(hub *ChatHub) gin.HandlerFunc {
@@ -45,9 +46,10 @@ func HandleWebSocket(hub *ChatHub) gin.HandlerFunc {
 		// Tạo client
 		sendChan := make(chan []byte, 256) // tạo channel
 		client := &client{
-			hub:  hub,
-			conn: conn,
-			send: sendChan,
+			hub:      hub,
+			conn:     conn,
+			send:     sendChan,
+			username: username,
 		}
 		// Đăng ký client vào hub
 		hub.mu.Lock()
@@ -90,6 +92,10 @@ func (c *client) readPump() {
 			log.Printf("error unmarshaling message: %v", err)
 			continue
 		}
+
+		// Tự động set username và user_id từ connection (tránh spoofing)
+		msg.Username = c.username
+		msg.UserID = c.username // dùng username làm user_id (consistent với user model)
 
 		// set mốc thời gian
 		if msg.Timestamp == 0 {
