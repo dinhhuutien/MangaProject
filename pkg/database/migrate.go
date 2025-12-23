@@ -37,5 +37,10 @@ func Migrate(db *sql.DB) error {
 			return fmt.Errorf("migrate stmt %d: %w", i, err)
 		}
 	}
+
+	// Bonus: Add list_name column to user_progress if it doesn't exist
+	// SQLite doesn't support IF NOT EXISTS for ALTER TABLE, so we'll try and ignore error if column exists
+	_, _ = db.Exec(`ALTER TABLE user_progress ADD COLUMN list_name TEXT DEFAULT '';`)
+
 	return nil
 }
