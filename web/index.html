@@ -1,174 +1,682 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="vi">
 <head>
-  <meta charset="utf-8">
-  <title>MangaHub – Use Case Demo UI</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MangaHub – Demo UI (Use Cases)</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 16px; line-height: 1.4; }
+    h1 { margin: 0 0 12px; }
+    h2 { margin: 18px 0 8px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 12px; min-width: 280px; flex: 1; }
+    label { display:block; font-size: 12px; color:#444; margin-top: 8px; }
+    input, select, button, textarea { padding: 8px; font-size: 14px; }
+    input, select, textarea { width: 100%; box-sizing: border-box; }
+    button { cursor: pointer; }
+    .muted { color: #666; font-size: 12px; }
+    .ok { color: #0a7a0a; }
+    .err { color: #b00020; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #fafafa; padding: 10px; border: 1px solid #eee; border-radius: 8px; }
+    ul { padding-left: 18px; }
+    .pill { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius:999px; font-size:12px; margin-right:6px; }
+    .split { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .small { font-size: 12px; }
+  </style>
 </head>
 <body>
+  <h1>MangaHub – Demo UI theo Use Case</h1>
+  <div class="muted">
+    <b></b> <b>API Base</b> <code></code>
+  </div>
 
-<h1>MangaHub – Full Use Case Demo UI</h1>
+  <div class="card" style="margin-top:12px;">
+    <div class="split">
+      <div style="flex:1; min-width:260px;">
+        <label>API Base </label>
+        <input id="apiBase" placeholder="http://localhost:8080" />
+      </div>
+      <div style="display:flex; gap:8px; align-items:end;">
+        <button onclick="saveApiBase()">Save</button>
+        <button onclick="health()">GET /health</button>
+        <button onclick="clearLog()">Clear log</button>
+      </div>
+    </div>
+    <div class="muted small" style="margin-top:8px;">
+      <code>http://localhost:8080/ui</code> 
+    </div>
+  </div>
 
-<hr>
+  <div class="row">
+    <div class="card">
+      <h2> Register</h2>
+      <div class="muted"></div>
+      <label>Username</label>
+      <input id="regUser" placeholder="tien" />
+      <label>Email (optional)</label>
+      <input id="regEmail" placeholder="tien@example.com" />
+      <label>Password (>= 6 )</label>
+      <input id="regPass" type="password" placeholder="123456" />
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button onclick="register()">Register</button>
+        <button onclick="fillDemoUser()">Fill demo</button>
+      </div>
+      <pre id="regOut" class="muted">...</pre>
+    </div>
 
-<h2>UC-001: User Registration</h2>
-<p>Register new user (REST API)</p>
-<input id="regUser" placeholder="username">
-<input id="regPass" type="password" placeholder="password">
-<button onclick="register()">Register</button>
+    <div class="card">
+      <h2> Login → JWT</h2>
+      <label>Username / Email</label>
+      <input id="loginUser" placeholder="tien" />
+      <label>Password</label>
+      <input id="loginPass" type="password" placeholder="123456" />
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button onclick="login()">Login</button>
+        <button onclick="logout()">Logout</button>
+      </div>
 
-<hr>
+      <div style="margin-top:10px;">
+        <div class="muted">Token (JWT):</div>
+        <pre id="tokenBox" class="muted">No token</pre>
+        <div style="display:flex; gap:8px;">
+          <button onclick="copyToken()">Copy token</button>
+          <button onclick="whoami()">Check token</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<h2>UC-002: User Authentication</h2>
-<input id="loginUser" placeholder="username">
-<input id="loginPass" type="password" placeholder="password">
-<button onclick="login()">Login</button>
-<pre id="tokenBox"></pre>
+  <div class="row">
+    <div class="card">
+      <h2> Search / Browse Manga</h2>
+      <div class="split">
+        <div style="flex:1; min-width:180px;">
+          <label>Query (q)</label>
+          <input id="q" placeholder="one" />
+        </div>
+        <div style="flex:1; min-width:160px;">
+          <label>Genre</label>
+          <input id="genre" placeholder="Action" />
+        </div>
+        <div style="flex:1; min-width:160px;">
+          <label>Status</label>
+          <input id="status" placeholder="ongoing/completed" />
+        </div>
+      </div>
+      <div class="split" style="margin-top:8px;">
+        <div style="min-width:140px;">
+          <label>Limit</label>
+          <input id="limit" type="number" value="50" />
+        </div>
+        <div style="min-width:140px;">
+          <label>Offset</label>
+          <input id="offset" type="number" value="0" />
+        </div>
+        <div style="display:flex; gap:8px; align-items:end;">
+          <button onclick="searchManga()">Search</button>
+          <button onclick="prevPage()">Prev</button>
+          <button onclick="nextPage()">Next</button>
+        </div>
+      </div>
 
-<hr>
+      <div class="muted small" style="margin-top:8px;">
+       
+      </div>
 
-<h2>UC-003: Search / Browse Manga</h2>
-<button onclick="loadManga()">Load Manga</button>
-<ul id="mangaList"></ul>
+      <ul id="mangaList"></ul>
+    </div>
 
-<hr>
+    <div class="card">
+      <h2> Manga Detail</h2>
+      <div class="muted"></div>
+      <pre id="mangaDetail" class="muted">No manga selected</pre>
+    </div>
+  </div>
 
-<h2>UC-004: View Manga Detail</h2>
-<p>Click manga ID from list to view detail (basic)</p>
-<pre id="mangaDetail"></pre>
+  <div class="row">
+    <div class="card">
+      <h2> Add to Library (JWT)</h2>
+      <div class="muted"></div>
 
-<hr>
+      <label>Manga ID</label>
+      <input id="libMangaId" placeholder="one-piece" />
 
-<h2>UC-005 & UC-006: Add to Library / Update Progress</h2>
-<input id="mangaId" placeholder="manga_id">
-<input id="chapter" type="number" placeholder="chapter">
-<button onclick="updateProgress()">Update Progress</button>
+      <label>Status</label>
+      <select id="libStatus">
+        <option value="reading">reading</option>
+        <option value="completed">completed</option>
+        <option value="plan-to-read">plan-to-read</option>
+        <option value="dropped">dropped</option>
+      </select>
 
-<hr>
+      <label>Current Chapter</label>
+      <input id="libChapter" type="number" value="1" />
 
-<h2>UC-007 & UC-008: TCP Progress Sync</h2>
-<p>
-TCP sync is demonstrated via <b>tcp-monitor</b> client.<br>
-Updating progress above will broadcast events to TCP clients.
-</p>
+      <label></label>
+      <input id="libListName" placeholder="default" />
 
-<hr>
+      <div style="margin-top:10px;">
+        <button onclick="addLibrary()">Add / Upsert Library</button>
+      </div>
+      <pre id="libOut" class="muted">...</pre>
+    </div>
 
-<h2>UC-009: UDP Notification Subscription</h2>
-<p>UDP clients subscribe via udp-monitor.</p>
-<button onclick="udpInfo()">Show UDP Info</button>
-<pre id="udpBox"></pre>
+    <div class="card">
+      <h2> Update Progress (JWT)</h2>
+      <div class="muted"></div>
 
-<hr>
+      <label>Manga ID</label>
+      <input id="progMangaId" placeholder="one-piece" />
 
-<h2>UC-010: Send Chapter Release Notification</h2>
-<p>Admin-triggered notification (server-side)</p>
-<button onclick="alert('Trigger UDP notification via server/admin API')">
-Trigger Notification
-</button>
+      <label>Current Chapter</label>
+      <input id="progChapter" type="number" value="2" />
 
-<hr>
+      <label>Status</label>
+      <select id="progStatus">
+        <option value="reading">reading</option>
+        <option value="completed">completed</option>
+        <option value="plan-to-read">plan-to-read</option>
+        <option value="dropped">dropped</option>
+      </select>
 
-<h2>UC-011 & UC-012: WebSocket Chat</h2>
-<button onclick="connectWS()">Connect WebSocket</button><br><br>
-<input id="wsMsg" placeholder="message">
-<button onclick="sendWS()">Send</button>
-<pre id="chatBox"></pre>
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button onclick="updateProgress()">PATCH /progress</button>
+        <button onclick="fillFromSelected()">Fill from selected manga</button>
+      </div>
+      <pre id="progOut" class="muted">...</pre>
 
-<hr>
+      <div class="muted small" style="margin-top:8px;">
+        TCP monitor (terminal): <code>go run ./cmd/tcp-monitor</code>
+      </div>
+    </div>
+  </div>
 
-<h2>UC-013: WebSocket Disconnect</h2>
-<p>Disconnect handled automatically when browser closes.</p>
+  <div class="row">
+    <div class="card">
+      <h2> UDP Notifications</h2>
+      <div class="muted">
+       
+        <pre>go run ./cmd/udp-monitor</pre>
+      </div>
 
-<hr>
+      <h3 style="margin:10px 0 6px;">Trigger notify (HTTP → UDP broadcast)</h3>
+      <div class="muted small">Endpoint: <code>POST /admin/notify</code> (JWT)</div>
 
-<h2>UC-014–016: gRPC Internal Services</h2>
-<p>
-gRPC services are internal and demonstrated via gRPC clients,
-not browser UI.
-</p>
+      <label>Message</label>
+      <input id="notifyMsg" value="New chapter released!" />
 
-<hr>
+      <div style="margin-top:10px;">
+        <button onclick="triggerNotify()">POST /admin/notify</button>
+      </div>
+      <pre id="notifyOut" class="muted">...</pre>
+    </div>
 
-<h2>UC-025–031: Error Handling & Security</h2>
-<ul>
-  <li>JWT validation – middleware</li>
-  <li>Input validation – backend</li>
-  <li>Network recovery – service-level</li>
-</ul>
+    <div class="card">
+      <h2> WebSocket Chat</h2>
+      <div class="muted"></div>
+
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button onclick="connectWS()">Connect WS</button>
+        <button onclick="disconnectWS()">Disconnect</button>
+      </div>
+
+      <label>Message</label>
+      <input id="wsMsg" placeholder="hello" />
+
+      <div style="margin-top:10px;">
+        <button onclick="sendWS()">Send</button>
+      </div>
+
+      <div class="muted small" style="margin-top:8px;">
+       
+      </div>
+
+      <pre id="chatBox" class="muted">WS not connected</pre>
+    </div>
+  </div>
+
+  <h2>Log</h2>
+  <pre id="logBox" class="muted">Ready.</pre>
 
 <script>
-let TOKEN = ""
-let ws = null
+  // ========= Helpers =========
+  function $(id) { return document.getElementById(id); }
 
-function register() {
-  fetch("/auth/register", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      username: regUser.value,
-      password: regPass.value
-    })
-  })
-}
+  function getBase() {
+    const v = $("apiBase").value.trim();
+    if (v) return v.replace(/\/+$/, "");
+    return location.origin;
+  }
 
-function login() {
-  fetch("/auth/login", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      username: loginUser.value,
-      password: loginPass.value
-    })
-  })
-  .then(r => r.json())
-  .then(d => {
-    TOKEN = d.token
-    tokenBox.innerText = TOKEN
-  })
-}
+  function saveApiBase() {
+    localStorage.setItem("apiBase", $("apiBase").value.trim());
+    log("Saved API base: " + getBase());
+  }
 
-function loadManga() {
-  fetch("/manga")
-    .then(r => r.json())
-    .then(d => {
-      mangaList.innerHTML = ""
-      d.results.forEach(m => {
-        const li = document.createElement("li")
-        li.innerText = m.id + " - " + m.title
-        li.onclick = () => mangaDetail.innerText = JSON.stringify(m, null, 2)
-        mangaList.appendChild(li)
-      })
-    })
-}
+  function loadApiBase() {
+    const v = localStorage.getItem("apiBase");
+    if (v) $("apiBase").value = v;
+  }
 
-function updateProgress() {
-  fetch("/progress", {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + TOKEN
-    },
-    body: JSON.stringify({
-      manga_id: mangaId.value,
-      current_chapter: parseInt(chapter.value),
-      status: "reading"
-    })
-  })
-}
+  function setOut(el, obj, isErr=false) {
+    const box = $(el);
+    box.className = isErr ? "err" : "ok";
+    if (typeof obj === "string") box.textContent = obj;
+    else box.textContent = JSON.stringify(obj, null, 2);
+  }
 
-function udpInfo() {
-  udpBox.innerText =
-    "UDP notifications are demonstrated via udp-monitor client."
-}
+  function log(msg, isErr=false) {
+    const now = new Date().toLocaleTimeString();
+    const line = `[${now}] ${msg}`;
+    const box = $("logBox");
+    box.textContent = line + "\n" + box.textContent;
+    box.className = isErr ? "err" : "muted";
+  }
 
-function connectWS() {
-  ws = new WebSocket("ws://" + location.host + "/ws")
-  ws.onmessage = e => chatBox.innerText += e.data + "\n"
-}
+  function clearLog() {
+    $("logBox").textContent = "Ready.";
+    $("logBox").className = "muted";
+  }
 
-function sendWS() {
-  ws.send(wsMsg.value)
-}
+  function getToken() {
+    return localStorage.getItem("token") || "";
+  }
+
+  function setToken(t) {
+    if (!t) {
+      localStorage.removeItem("token");
+      $("tokenBox").textContent = "No token";
+      return;
+    }
+    localStorage.setItem("token", t);
+    $("tokenBox").textContent = t;
+  }
+
+  async function apiFetch(path, opts = {}) {
+    const url = getBase() + path;
+    const headers = opts.headers || {};
+    if (!headers["Content-Type"] && opts.body) headers["Content-Type"] = "application/json";
+    const token = getToken();
+    if (opts.auth && token) headers["Authorization"] = "Bearer " + token;
+    opts.headers = headers;
+
+    const res = await fetch(url, opts);
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+    if (!res.ok) {
+      const errMsg = (data && data.error) ? data.error : (typeof data === "string" ? data : res.statusText);
+      throw new Error(errMsg || ("HTTP " + res.status));
+    }
+    return data;
+  }
+
+  function formatGenres(g) {
+    try {
+      if (Array.isArray(g)) return g.join(", ");
+      if (typeof g === "string") {
+        const parsed = JSON.parse(g);
+        if (Array.isArray(parsed)) return parsed.join(", ");
+        return g;
+      }
+      return "";
+    } catch {
+      return (typeof g === "string") ? g : "";
+    }
+  }
+
+  // ========= UC-Health =========
+  async function health() {
+    try {
+      const d = await apiFetch("/health", { method: "GET" });
+      log("Health OK: " + JSON.stringify(d));
+    } catch (e) {
+      log("Health FAIL: " + e.message, true);
+    }
+  }
+
+  // ========= UC-001 Register =========
+  function fillDemoUser() {
+    $("regUser").value = "tien";
+    $("regEmail").value = "tien@example.com";
+    $("regPass").value = "123456";
+    $("loginUser").value = "tien";
+    $("loginPass").value = "123456";
+  }
+
+  async function register() {
+    try {
+      const body = {
+        username: $("regUser").value.trim(),
+        email: $("regEmail").value.trim(),
+        password: $("regPass").value
+      };
+      const d = await apiFetch("/auth/register", {
+        method: "POST",
+        body: JSON.stringify(body)
+      });
+      setOut("regOut", d, false);
+      log("Register OK");
+    } catch (e) {
+      setOut("regOut", { error: e.message }, true);
+      log("Register FAIL: " + e.message, true);
+    }
+  }
+
+  // ========= UC-002 Login =========
+  async function login() {
+    try {
+      const body = {
+        username: $("loginUser").value.trim(),
+        password: $("loginPass").value
+      };
+      const d = await apiFetch("/auth/login", {
+        method: "POST",
+        body: JSON.stringify(body)
+      });
+      if (!d || !d.token) throw new Error("No token in response");
+      setToken(d.token);
+      log("Login OK (token saved)");
+    } catch (e) {
+      log("Login FAIL: " + e.message, true);
+    }
+  }
+
+  function logout() {
+    setToken("");
+    log("Logged out (token cleared)");
+  }
+
+  async function copyToken() {
+    const t = getToken();
+    if (!t) return alert("No token");
+    await navigator.clipboard.writeText(t);
+    alert("Copied token");
+  }
+
+  function whoami() {
+    const t = getToken();
+    if (!t) return alert("No token");
+    // JWT is base64url: header.payload.signature
+    try {
+      const parts = t.split(".");
+      if (parts.length < 2) throw new Error("invalid token format");
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+      alert("JWT payload:\n" + JSON.stringify(payload, null, 2));
+    } catch (e) {
+      alert("Cannot decode JWT payload: " + e.message);
+    }
+  }
+
+  // ========= UC-003 Search Manga =========
+  let lastResults = [];
+  let selectedMangaId = "";
+
+  async function searchManga() {
+    try {
+      const q = encodeURIComponent($("q").value.trim());
+      const genre = encodeURIComponent($("genre").value.trim());
+      const status = encodeURIComponent($("status").value.trim());
+      const limit = parseInt($("limit").value || "50", 10);
+      const offset = parseInt($("offset").value || "0", 10);
+
+      const qs = new URLSearchParams();
+      if (q) qs.set("q", $("q").value.trim());
+      if (genre) qs.set("genre", $("genre").value.trim());
+      if (status) qs.set("status", $("status").value.trim());
+      qs.set("limit", String(limit));
+      qs.set("offset", String(offset));
+
+      const d = await apiFetch("/manga?" + qs.toString(), { method: "GET" });
+
+      const results = d.results || d || [];
+      if (!Array.isArray(results)) throw new Error("Unexpected /manga response");
+      lastResults = results;
+
+      const ul = $("mangaList");
+      ul.innerHTML = "";
+      if (results.length === 0) {
+        ul.innerHTML = "<li class='muted'>No results</li>";
+        log("Search manga OK: 0 result");
+        return;
+      }
+
+      for (const m of results) {
+        const li = document.createElement("li");
+        li.style.cursor = "pointer";
+        li.innerHTML = `<span class="pill">${escapeHtml(m.id)}</span> ${escapeHtml(m.title || "(no title)")}`;
+        li.onclick = () => loadDetail(m.id);
+        ul.appendChild(li);
+      }
+
+      log(`Search manga OK: ${results.length} item(s) (limit=${limit}, offset=${offset})`);
+    } catch (e) {
+      log("Search manga FAIL: " + e.message, true);
+    }
+  }
+
+  function nextPage() {
+    const limit = parseInt($("limit").value || "50", 10);
+    const offset = parseInt($("offset").value || "0", 10);
+    $("offset").value = String(offset + limit);
+    searchManga();
+  }
+
+  function prevPage() {
+    const limit = parseInt($("limit").value || "50", 10);
+    const offset = parseInt($("offset").value || "0", 10);
+    $("offset").value = String(Math.max(0, offset - limit));
+    searchManga();
+  }
+
+  // ========= UC-004 Detail =========
+  async function loadDetail(id) {
+    selectedMangaId = id;
+    try {
+      const d = await apiFetch("/manga/" + encodeURIComponent(id), { method: "GET" });
+
+      // backend có thể trả {manga:..., progress:...} hoặc chỉ manga
+      const manga = d.manga || d;
+      const progress = d.progress;
+
+      let out = "";
+      out += `ID: ${manga.id}\n`;
+      out += `Title: ${manga.title}\n`;
+      out += `Author: ${manga.author}\n`;
+      out += `Status: ${manga.status}\n`;
+      out += `Total chapters: ${manga.total_chapters}\n`;
+      out += `Genres: ${formatGenres(manga.genres)}\n\n`;
+      out += `Description:\n${manga.description || ""}\n`;
+
+      if (progress) {
+        out += `\n--- Your progress ---\n`;
+        out += `Chapter: ${progress.current_chapter}\n`;
+        out += `Status: ${progress.status}\n`;
+      }
+
+      $("mangaDetail").textContent = out;
+      $("mangaDetail").className = "ok";
+
+      // auto fill vào form library/progress cho tiện demo
+      $("libMangaId").value = id;
+      $("progMangaId").value = id;
+
+      log("Loaded manga detail: " + id);
+    } catch (e) {
+      $("mangaDetail").textContent = "Error: " + e.message;
+      $("mangaDetail").className = "err";
+      log("Load detail FAIL: " + e.message, true);
+    }
+  }
+
+  function fillFromSelected() {
+    if (!selectedMangaId) return alert("Chưa chọn manga nào");
+    $("libMangaId").value = selectedMangaId;
+    $("progMangaId").value = selectedMangaId;
+    alert("Filled manga_id = " + selectedMangaId);
+  }
+
+  // ========= UC-005 Add library =========
+  async function addLibrary() {
+    try {
+      const body = {
+        manga_id: $("libMangaId").value.trim(),
+        status: $("libStatus").value,
+        current_chapter: parseInt($("libChapter").value || "0", 10),
+        list_name: $("libListName").value.trim()
+      };
+      if (!body.manga_id) throw new Error("manga_id required");
+      const d = await apiFetch("/library", {
+        method: "POST",
+        auth: true,
+        body: JSON.stringify(body)
+      });
+      setOut("libOut", d, false);
+      log("Add/Upsert library OK");
+    } catch (e) {
+      setOut("libOut", { error: e.message }, true);
+      log("Add/Upsert library FAIL: " + e.message, true);
+    }
+  }
+
+  // ========= UC-006 Update progress =========
+  async function updateProgress() {
+    try {
+      const body = {
+        manga_id: $("progMangaId").value.trim(),
+        current_chapter: parseInt($("progChapter").value || "0", 10),
+        status: $("progStatus").value
+      };
+      if (!body.manga_id) throw new Error("manga_id required");
+
+      const d = await apiFetch("/progress", {
+        method: "PATCH",
+        auth: true,
+        body: JSON.stringify(body)
+      });
+      setOut("progOut", d, false);
+      log("Update progress OK (check TCP monitor if running)");
+    } catch (e) {
+      setOut("progOut", { error: e.message }, true);
+      log("Update progress FAIL: " + e.message, true);
+    }
+  }
+
+  // ========= UC-010 Trigger notify =========
+  async function triggerNotify() {
+    try {
+      const body = { message: $("notifyMsg").value.trim() || "New chapter released!" };
+      const d = await apiFetch("/admin/notify", {
+        method: "POST",
+        auth: true,
+        body: JSON.stringify(body)
+      });
+      setOut("notifyOut", d, false);
+      log("Notify triggered (UDP broadcast) OK");
+    } catch (e) {
+      setOut("notifyOut", { error: e.message }, true);
+      log("Notify FAIL: " + e.message, true);
+    }
+  }
+
+  // ========= WebSocket chat =========
+  let ws = null;
+
+  function wsUrl() {
+    const base = getBase();
+    const u = new URL(base);
+    const proto = (u.protocol === "https:") ? "wss:" : "ws:";
+    const username = ($("loginUser").value.trim() || "anonymous");
+    return `${proto}//${u.host}/ws?username=${encodeURIComponent(username)}`;
+  }
+
+  function connectWS() {
+    try {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        alert("WS already connected");
+        return;
+      }
+      const url = wsUrl();
+      ws = new WebSocket(url);
+
+      $("chatBox").className = "muted";
+      $("chatBox").textContent = "Connecting WS...\n" + url;
+
+      ws.onopen = () => {
+        $("chatBox").className = "ok";
+        $("chatBox").textContent = "WS connected.\n" + url + "\n";
+        log("WS connected");
+      };
+
+      ws.onmessage = (e) => {
+        appendChat(e.data);
+      };
+
+      ws.onclose = () => {
+        appendChat("[WS closed]");
+        log("WS closed");
+      };
+
+      ws.onerror = () => {
+        appendChat("[WS error]");
+        log("WS error", true);
+      };
+    } catch (e) {
+      log("WS connect FAIL: " + e.message, true);
+    }
+  }
+
+  function disconnectWS() {
+    if (ws) ws.close();
+    ws = null;
+  }
+
+  function sendWS() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      alert("WS not connected");
+      return;
+    }
+    const msg = $("wsMsg").value;
+    if (!msg.trim()) return;
+
+    // IMPORTANT: server expect JSON {message: "..."}
+    ws.send(JSON.stringify({ message: msg }));
+    $("wsMsg").value = "";
+  }
+
+  function appendChat(raw) {
+    const box = $("chatBox");
+    let line = raw;
+
+    // Try pretty-print JSON if possible
+    try {
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === "object") {
+        // common chat message shape:
+        // {type:"chat", username:"...", message:"...", timestamp:...}
+        if (obj.username && obj.message) {
+          line = `${obj.username}: ${obj.message}`;
+        } else {
+          line = JSON.stringify(obj);
+        }
+      }
+    } catch {}
+
+    box.textContent += line + "\n";
+  }
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, (c) => ({
+      "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+    }[c]));
+  }
+
+  // ========= Init =========
+  (function init() {
+    loadApiBase();
+    setToken(getToken());
+    $("limit").value = $("limit").value || "50";
+  })();
 </script>
 
 </body>
