@@ -81,8 +81,7 @@ func (h *ChatHub) Run() {
 					conn.Close()
 				}
 			}
+			h.mu.Unlock()
 		}
-		h.mu.Unlock()
-
 	}
 }

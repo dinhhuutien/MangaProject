@@ -50,6 +50,64 @@ func Search(db *sql.DB, q, genre, status string, limit, offset int) ([]Manga, er
 	return res, rows.Err()
 }
 
+// Bonus: Advanced search with sorting
+func AdvancedSearch(db *sql.DB, q, genre, status string, sortBy string, limit, offset int) ([]Manga, error) {
+	sqlQ := `SELECT id,title,author,genres,status,total_chapters,description
+	         FROM manga WHERE 1=1`
+	args := []any{}
+
+	if q != "" {
+		sqlQ += " AND (title LIKE ? OR author LIKE ? OR description LIKE ?)"
+		args = append(args, "%"+q+"%", "%"+q+"%", "%"+q+"%")
+	}
+	if status != "" {
+		sqlQ += " AND status = ?"
+		args = append(args, status)
+	}
+	if genre != "" {
+		sqlQ += " AND genres LIKE ?"
+		args = append(args, "%"+genre+"%")
+	}
+
+	// Bonus: Add sorting
+	switch sortBy {
+	case "title_asc":
+		sqlQ += " ORDER BY title ASC"
+	case "title_desc":
+		sqlQ += " ORDER BY title DESC"
+	case "author_asc":
+		sqlQ += " ORDER BY author ASC"
+	case "author_desc":
+		sqlQ += " ORDER BY author DESC"
+	case "chapters_asc":
+		sqlQ += " ORDER BY total_chapters ASC"
+	case "chapters_desc":
+		sqlQ += " ORDER BY total_chapters DESC"
+	default:
+		// Default: sort by title ascending
+		sqlQ += " ORDER BY title ASC"
+	}
+
+	sqlQ += " LIMIT ? OFFSET ?"
+	args = append(args, limit, offset)
+
+	rows, err := db.Query(sqlQ, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []Manga
+	for rows.Next() {
+		var m Manga
+		if err := rows.Scan(&m.ID, &m.Title, &m.Author, &m.Genres, &m.Status, &m.TotalChapters, &m.Description); err != nil {
+			return nil, err
+		}
+		res = append(res, m)
+	}
+	return res, rows.Err()
+}
+
 func GetByID(db *sql.DB, id string) (Manga, error) {
 	var m Manga
 	err := db.QueryRow(`SELECT id,title,author,genres,status,total_chapters,description FROM manga WHERE id = ?`, id).
